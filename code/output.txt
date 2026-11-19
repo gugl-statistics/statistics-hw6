@@ -1,0 +1,87 @@
+
+=== Titanic: class x survival   (N = 891)
+            Survived        Died     total
+First            136          80       216
+Second            87          97       184
+Third            119         372       491
+total            342         549       891
+expected: [[82.91, 133.09], [70.63, 113.37], [188.46, 302.54]]
+P(F | X): [[0.6296, 0.3704], [0.4728, 0.5272], [0.2424, 0.7576]]
+chi2 = 102.8890  df = 2  p = 4.5493e-23  critical(5%) = 5.9915  Cramer V = 0.3398  min E = 70.63
+
+=== Titanic: sex x survival   (N = 891)
+            Survived        Died     total
+female           233          81       314
+male             109         468       577
+total            342         549       891
+expected: [[120.53, 193.47], [221.47, 355.53]]
+P(F | X): [[0.742, 0.258], [0.1889, 0.8111]]
+chi2 = 263.0506  df = 1  p = 3.7117e-59  critical(5%) = 3.8415  Cramer V = 0.5434  min E = 120.53
+
+=== Titanic: class x sex   (N = 891)
+              female        male     total
+First             94         122       216
+Second            76         108       184
+Third            144         347       491
+total            314         577       891
+expected: [[76.12, 139.88], [64.84, 119.16], [173.03, 317.97]]
+P(F | X): [[0.4352, 0.5648], [0.413, 0.587], [0.2933, 0.7067]]
+chi2 = 16.9715  df = 2  p = 2.0639e-04  critical(5%) = 5.9915  Cramer V = 0.1380  min E = 64.84
+
+=== Titanic, female only: class x survival   (N = 314)
+            Survived        Died     total
+First             91           3        94
+Second            70           6        76
+Third             72          72       144
+total            233          81       314
+expected: [[69.75, 24.25], [56.39, 19.61], [106.85, 37.15]]
+P(F | X): [[0.9681, 0.0319], [0.9211, 0.0789], [0.5, 0.5]]
+chi2 = 81.8866  df = 2  p = 1.6541e-18  critical(5%) = 5.9915  Cramer V = 0.5107  min E = 19.61
+
+=== Titanic, male only: class x survival   (N = 577)
+            Survived        Died     total
+First             45          77       122
+Second            17          91       108
+Third             47         300       347
+total            109         468       577
+expected: [[23.05, 98.95], [20.4, 87.6], [65.55, 281.45]]
+P(F | X): [[0.3689, 0.6311], [0.1574, 0.8426], [0.1354, 0.8646]]
+chi2 = 32.9541  df = 2  p = 6.9840e-08  critical(5%) = 5.9915  Cramer V = 0.2390  min E = 20.40
+
+=== Simulated hackers (independent)   (N = 600)
+                    Success     Failure     total
+Phishing                 62         177       239
+SQL injection            66         154       220
+Brute force              27         114       141
+total                   155         445       600
+expected: [[61.74, 177.26], [56.83, 163.17], [36.42, 104.58]]
+P(F | X): [[0.2594, 0.7406], [0.3, 0.7], [0.1915, 0.8085]]
+chi2 = 5.2831  df = 2  p = 7.1251e-02  critical(5%) = 5.9915  Cramer V = 0.0938  min E = 36.42
+
+=== Simulated hackers (dependent)   (N = 600)
+                    Success     Failure     total
+Phishing                 94         145       239
+SQL injection            66         154       220
+Brute force              11         130       141
+total                   171         429       600
+expected: [[68.11, 170.88], [62.7, 157.3], [40.19, 100.81]]
+P(F | X): [[0.3933, 0.6067], [0.3, 0.7], [0.078, 0.922]]
+chi2 = 43.6455  df = 2  p = 3.3304e-10  critical(5%) = 5.9915  Cramer V = 0.2697  min E = 40.19
+
+independent data, 10000 repetitions: rejected at 5% in 5.030% of them
+dependent data, m =    30: rejected in 17.7%
+dependent data, m =    60: rejected in 36.6%
+dependent data, m =   100: rejected in 61.0%
+dependent data, m =   200: rejected in 90.8%
+dependent data, m =   400: rejected in 100.0%
+dependent data, m =   600: rejected in 100.0%
+dependent data, m =  1000: rejected in 100.0%
+scipy check titanic_class: chi2 102.888989 vs 102.888989   p 4.549252e-23 vs 4.549252e-23
+scipy check titanic_sex: chi2 263.050574 vs 263.050574   p 3.711748e-59 vs 3.711748e-59
+scipy check hackers_indep: chi2 5.283104 vs 5.283104   p 7.125059e-02 vs 7.125059e-02
+scipy check hackers_dep: chi2 43.645527 vs 43.645527   p 3.330383e-10 vs 3.330383e-10
+sf(0.5, 1): mine 4.795001221870e-01  scipy 4.795001221870e-01
+sf(3.84, 1): mine 5.004352124871e-02  scipy 5.004352124871e-02
+sf(102.889, 2): mine 4.549226137662e-23  scipy 4.549226137662e-23
+sf(5.99, 2): mine 5.003662708659e-02  scipy 5.003662708659e-02
+sf(30, 4): mine 4.894437128029e-06  scipy 4.894437128029e-06

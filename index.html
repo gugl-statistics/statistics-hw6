@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Homework 6 - Statistical Independence</title>
+<meta name="description" content="Homework 6: contingency tables, marginal and conditional frequencies, expected frequencies and the chi-square test of independence, with the Titanic data and simulated hackers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">Homework 6 · Statistics</div>
+    <h1>Are X and F <span>independent</span>?<br>Contingency tables and the <span>χ² test</span></h1>
+    <div class="meta">Alberto Guglielmotti · all the tables on this page are computed in the browser from the raw data, the Python code gives the same numbers</div>
+  </div>
+</header>
+
+<nav class="toc"><div class="wrap">
+  <a href="#theory">1 · Theory</a>
+  <a href="#data">2 · Dataset</a>
+  <a href="#tables">3 · Tables</a>
+  <a href="#test">4 · χ² test</a>
+  <a href="#explore">5 · Explorer</a>
+  <a href="#sim">6 · Simulation</a>
+  <a href="#causal">7 · Causality</a>
+  <a href="#calc">8 · Calculator</a>
+  <a href="#code">Code</a>
+</div></nav>
+
+<main>
+
+<!-- ============================================================ 1 -->
+<section id="theory">
+  <h2><span class="num">1</span>Independence: the theory</h2>
+  <p class="lead">From events to random variables to a sample.</p>
+
+  <h3>In probability</h3>
+  <p>Two events A and B are independent if knowing that one happened doesn't change the probability of the other:</p>
+  <p style="text-align:center"><span class="math big">P(A ∩ B) = P(A)·P(B) &nbsp;⇔&nbsp; P(A | B) = P(A) &nbsp; (if P(B) &gt; 0)</span></p>
+  <p>Two random variables X and F are independent if this holds for <b>every</b> pair of values (or of sets of values). For discrete variables this means that the joint
+  distribution is the product of the marginal ones:</p>
+  <p style="text-align:center"><span class="math big">P(X = x<sub>i</sub>, F = f<sub>j</sub>) = P(X = x<sub>i</sub>)·P(F = f<sub>j</sub>) &nbsp; for all i, j</span></p>
+  <p>Equivalently, the conditional distribution of F given X = x<sub>i</sub> is the same for every i (and equal to the marginal of F). Independence is symmetric: if F doesn't
+  depend on X, then X doesn't depend on F. It is also stronger than being uncorrelated: uncorrelated variables can still be dependent, while independent variables are always uncorrelated.</p>
+
+  <h3>In statistics (on a sample)</h3>
+  <p>With N observations of the pair (X, F) we count n<sub>ij</sub> = number of observations with X = x<sub>i</sub> and F = f<sub>j</sub>, and the totals
+  n<sub>i·</sub> (row) and n<sub>·j</sub> (column). The variables are <b>statistically independent in the sample</b> (in the descriptive sense) if</p>
+  <p style="text-align:center"><span class="math big">n<sub>ij</sub>/N = (n<sub>i·</sub>/N)·(n<sub>·j</sub>/N) &nbsp;⇔&nbsp; n<sub>ij</sub> = n<sub>i·</sub>·n<sub>·j</sub>/N</span></p>
+  <p>i.e. every row of the table has the same profile (the same conditional frequencies). The right side is called the <b>expected frequency</b> under independence,
+  <span class="math">E<sub>ij</sub> = n<sub>i·</sub>n<sub>·j</sub>/N</span>. In real data this is practically never exactly true, even if the variables are independent in the
+  population, because of random sampling. So the question becomes: are the differences between the observed n<sub>ij</sub> and the expected E<sub>ij</sub> too big to be explained by chance?</p>
+
+  <h3>Pearson's χ² test</h3>
+  <ul>
+    <li><b>Hypotheses:</b> H<sub>0</sub>: X and F are independent in the population; H<sub>1</sub>: they are dependent (associated).</li>
+    <li><b>Statistic:</b> <span class="math">χ² = Σ<sub>i</sub> Σ<sub>j</sub> (n<sub>ij</sub> − E<sub>ij</sub>)² / E<sub>ij</sub></span>. It is 0 when the table is exactly "independent" and grows with the distance from it.</li>
+    <li><b>Distribution:</b> if H<sub>0</sub> is true and N is large, χ² has approximately a chi-square distribution with <span class="math">(r − 1)(c − 1)</span> degrees of freedom (r rows,
+    c columns). The usual rule of thumb for the approximation: all E<sub>ij</sub> ≥ 1 and at most 20% of them below 5.</li>
+    <li><b>Decision:</b> the p-value is <span class="math">P(χ²<sub>df</sub> ≥ observed χ²)</span>. If p &lt; α (I used α = 0.05) we reject independence. Equivalently, reject if χ² is above the
+    critical value (5.99 for df = 2, 3.84 for df = 1).</li>
+    <li><b>Strength:</b> the p-value depends a lot on N, so to measure how strong the association is I also used Cramér's V = √(χ²/(N·(min(r, c) − 1))), which goes from 0
+    (independence) to 1 (perfect association).</li>
+  </ul>
+  <div class="note">Not rejecting H<sub>0</sub> does not prove independence: it only means the data are compatible with it (the sample could be too small to see a weak association).</div>
+</section>
+
+<hr>
+
+<!-- ============================================================ 2 -->
+<section id="data">
+  <h2><span class="num">2</span>The dataset</h2>
+  <p class="lead">891 passengers of the Titanic.</p>
+  <p>I used the well-known Titanic passenger list (the 891 passengers of the Kaggle training set, in the version distributed with the seaborn library, file
+  <a href="data/titanic.csv"><code>data/titanic.csv</code></a>). Each row is one passenger, with class, sex, age, port of embarkation, whether they travelled alone, and whether they survived.
+  The main analysis uses:</p>
+  <ul>
+    <li><b>X = ticket class</b> (First, Second, Third)</li>
+    <li><b>F = outcome</b> (Survived, Died)</li>
+  </ul>
+  <p>It's a good example because the two variables are categorical, the sample is large enough for the χ² approximation, and the question "did the class affect survival?" naturally leads to the
+  association vs causation discussion. In section 6 I also used a simulated dataset of hackers (attack technique × success), where I know the truth because I generated it, and in section 5
+  any other pair of Titanic variables can be tested.</p>
+</section>
+
+<hr>
+
+<!-- ============================================================ 3 -->
+<section id="tables">
+  <h2><span class="num">3</span>Contingency table and frequencies</h2>
+  <p class="lead">X = class, F = survival.</p>
+
+  <h3>Observed counts n<sub>ij</sub> with marginal totals</h3>
+  <div class="table-wrap"><table id="t-obs"></table></div>
+
+  <h3>Marginal relative frequencies</h3>
+  <div class="two">
+    <div class="table-wrap"><table id="t-margx"></table></div>
+    <div class="table-wrap"><table id="t-margf"></table></div>
+  </div>
+
+  <h3>Conditional relative frequencies</h3>
+  <div class="two">
+    <div><div class="ctitle">F given X: P(survival | class) (each row sums to 1)</div><div class="table-wrap"><table id="t-fx"></table></div></div>
+    <div><div class="ctitle">X given F: P(class | survival) (each column sums to 1)</div><div class="table-wrap"><table id="t-xf"></table></div></div>
+  </div>
+  <canvas class="plot" id="t-chart"></canvas>
+  <div class="legend"><span><i style="background:var(--orange)"></i>survival rate in the class</span><span><i style="background:#fff"></i>overall survival rate (marginal)</span></div>
+  <p>Already from the conditional frequencies the answer looks clear: if class and survival were independent, all three classes would have the same survival rate as the whole ship,
+  38.4%. Instead it was 63.0% in first class, 47.3% in second and only 24.2% in third. Read the other way round: first class was 24.2% of the passengers but 39.8% of the survivors,
+  third class was 55.1% of the passengers but 67.8% of the dead.</p>
+
+  <h3>Expected frequencies under independence, E<sub>ij</sub> = n<sub>i·</sub>n<sub>·j</sub>/N</h3>
+  <div class="table-wrap"><table id="t-exp"></table></div>
+  <p>For example for first class and survived: E = 216·342/891 = 82.9, but 136 survived. Under independence we would expect about 83 first-class survivors and 188 third-class survivors;
+  we observe 136 and 119.</p>
+</section>
+
+<hr>
+
+<!-- ============================================================ 4 -->
+<section id="test">
+  <h2><span class="num">4</span>The χ² statistic and the p-value</h2>
+  <p class="lead">How far is the table from independence?</p>
+  <h3>Contributions (n<sub>ij</sub> − E<sub>ij</sub>)²/E<sub>ij</sub> and standardized residuals</h3>
+  <div class="two">
+    <div class="table-wrap"><table id="t-contrib"></table></div>
+    <div class="table-wrap"><table id="t-resid"></table></div>
+  </div>
+  <div class="out" id="t-result"></div>
+  <canvas class="plot" id="t-dist"></canvas>
+  <div class="legend"><span><i style="background:var(--sky)"></i>χ² density, df = 2 (distribution of the statistic if H<sub>0</sub> were true)</span><span><i style="background:var(--orange)"></i>5% rejection region</span><span><i style="background:#fff"></i>observed χ² (off the chart)</span></div>
+
+  <h3>Interpretation</h3>
+  <ul>
+    <li><b>χ² = 102.89 with df = 2</b>, far above the 5% critical value 5.99. The p-value is 4.5·10⁻²³: if class and survival were independent, a table this far from the
+    expected one would practically never happen. <b>We reject independence: class and survival are statistically dependent.</b></li>
+    <li>The approximation is safe: the smallest expected count is 70.6, well above 5.</li>
+    <li>The residuals show where the dependence is: first class has many more survivors than expected (+5.8), third class many fewer (−5.1) and many more deaths (+4.0).
+    Second class is closer to independence. More than half of the χ² comes from the two first-class cells.</li>
+    <li>Cramér's V = 0.34: a moderate association, not just a statistically significant one. (For comparison, sex vs survival gives χ² = 263.05, df = 1, V = 0.54, an even stronger association.)</li>
+  </ul>
+  <p>I wrote my own function for the p-value: since a χ²<sub>df</sub> variable is a Gamma(df/2, 2), P(χ² &gt; x) is the regularized upper incomplete gamma function Q(df/2, x/2), which I compute with its
+  power series for small x and a continued fraction for large x (same idea as the normal CDF in the last homework). I checked it against <span class="mono">scipy.stats.chi2.sf</span>: they agree to all 12+ digits
+  printed (for example 4.549226137662·10⁻²³ for x = 102.889, df = 2), and the χ² statistics agree with <span class="mono">scipy.stats.chi2_contingency</span>.</p>
+</section>
+
+<hr>
+
+<!-- ============================================================ 5 -->
+<section id="explore">
+  <h2><span class="num">5</span>Explorer: any two Titanic variables</h2>
+  <p class="lead">Pick X and F, everything is recomputed from the 891 rows.</p>
+  <div class="card demo">
+    <span class="label">Try it</span>
+    <div class="row">
+      <div><label for="ex-x">X (rows)</label><select id="ex-x"></select></div>
+      <div><label for="ex-f">F (columns)</label><select id="ex-f"></select></div>
+      <div><label>Show</label><div class="seg" id="ex-view"><button data-v="obs" class="on">counts</button><button data-v="row">P(F | X)</button><button data-v="col">P(X | F)</button><button data-v="exp">expected</button><button data-v="res">residuals</button></div></div>
+    </div>
+    <div class="table-wrap"><table id="ex-table"></table></div>
+    <canvas class="plot" id="ex-chart"></canvas>
+    <div class="legend" id="ex-legend"></div>
+    <div class="out" id="ex-result"></div>
+  </div>
+  <p>Some things I found with it:</p>
+  <ul>
+    <li><b>Sex × survival:</b> χ² = 263.05, p ≈ 4·10⁻⁵⁹, V = 0.54: 74.2% of the women survived and 18.9% of the men.</li>
+    <li><b>Class × sex:</b> χ² = 16.97, df = 2, p = 0.0002, V = 0.14: the two explanatory variables are related to each other too (third class was 70.7% men, first class 56.5%). This matters for section 7.</li>
+    <li><b>Port × survival</b> is also significant (χ² = 29.67, df = 3, p = 1.6·10⁻⁶), but 2 passengers have no port, so one expected count is 0.77 (below 1) and the χ² approximation is not reliable for
+    that table (the explorer warns about it). The fix would be to drop or merge that category.</li>
+    <li><b>Age group × survival</b> (p = 0.00025): children survived more (54%), but 177 passengers (20%) have no age, and their survival rate is only 29%. Missing data can end up as a category of its own,
+    and here it is clearly not "missing at random".</li>
+  </ul>
+</section>
+
+<hr>
+
+<!-- ============================================================ 6 -->
+<section id="sim">
+  <h2><span class="num">6</span>Simulated hackers: when I know the truth</h2>
+  <p class="lead">Continuing the hacker story of the previous homeworks.</p>
+  <p>m = 600 hackers each use one technique X (phishing 40%, SQL injection 35%, brute force 25%) and the attack either succeeds or fails (F). I generated two versions:</p>
+  <ul>
+    <li><b>Independent:</b> success probability 0.30 whatever the technique.</li>
+    <li><b>Dependent:</b> success probability 0.45 for phishing, 0.30 for SQL injection, 0.15 for brute force.</li>
+  </ul>
+  <div class="two">
+    <div><div class="ctitle">independent version</div><div class="table-wrap"><table id="h-ind"></table></div><div class="out" id="h-ind-r"></div></div>
+    <div><div class="ctitle">dependent version</div><div class="table-wrap"><table id="h-dep"></table></div><div class="out" id="h-dep-r"></div></div>
+  </div>
+  <p>In the independent version the sample success rates still differ (25.9%, 30.0%, 19.1%) just by chance, but χ² = 5.28 is below 5.99 and p = 0.071, so we correctly don't reject independence.
+  In the dependent version p = 3.3·10⁻¹⁰ and we correctly reject it.</p>
+  <p>I also repeated the independent experiment 10,000 times: the test rejected (wrongly) in 5.03% of the cases, which is exactly what α = 0.05 means (type I error rate). And with the dependent model
+  the probability of detecting the dependence (the power) grows with the sample size:</p>
+  <div class="table-wrap"><table id="h-power"></table></div>
+  <p>With only 30 hackers the test misses the dependence 82% of the time (and the χ² approximation is also shaky, since some expected counts are below 5). This is the practical meaning of "not
+  rejecting is not proving independence".</p>
+
+  <div class="card demo">
+    <span class="label">Try it</span>
+    <div class="row">
+      <div><label for="s-m">m = <b id="s-mv" class="hl">600</b> hackers</label><input id="s-m" type="range" min="20" max="3000" step="10" value="600"></div>
+      <div><label for="s-d">strength of the dependence = <b id="s-dv" class="hl">0.00</b></label><input id="s-d" type="range" min="0" max="1" step="0.05" value="0"></div>
+      <div style="flex:0 0 auto"><div class="btns"><button id="s-run">New sample</button><button id="s-rep" class="ghost">Repeat 1,000 times</button></div></div>
+    </div>
+    <div class="out" id="s-probs"></div>
+    <div class="table-wrap"><table id="s-table"></table></div>
+    <canvas class="plot" id="s-dist"></canvas>
+    <div class="legend"><span><i style="background:var(--sky)"></i>χ² density, df = 2</span><span><i style="background:var(--orange)"></i>5% rejection region</span><span><i style="background:#fff"></i>observed χ²</span></div>
+    <div class="out" id="s-result"></div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ============================================================ 7 -->
+<section id="causal">
+  <h2><span class="num">7</span>Association is not causality</h2>
+  <p class="lead">What the test does and doesn't say.</p>
+  <p>The χ² test only says that the two variables are <b>associated</b>: knowing the class changes what we expect about survival. It doesn't say <i>why</i>, and it is symmetric, so it doesn't even
+  say which variable depends on which. Saying "being in third class caused people to die" is a causal claim, and these data are observational: nobody assigned the passengers to classes at random.</p>
+
+  <h3>Possible explanations other than "class causes survival"</h3>
+  <ul>
+    <li><b>Confounding variables:</b> something related to both X and F. On the Titanic the obvious one is sex: "women and children first" was applied, and the classes had different proportions of
+    men (class and sex are associated, section 5). Other plausible ones that are not in the data: where the cabins were (third class was lower in the ship and further from the lifeboats),
+    family size, language or nationality.</li>
+    <li><b>The test can't separate these effects</b> by itself. A first step is to look at the association <b>inside</b> each group of the confounder (stratification):</li>
+  </ul>
+  <div class="two">
+    <div><div class="ctitle">women only: class × survival</div><div class="table-wrap"><table id="c-f"></table></div><div class="out" id="c-f-r"></div></div>
+    <div><div class="ctitle">men only: class × survival</div><div class="table-wrap"><table id="c-m"></table></div><div class="out" id="c-m-r"></div></div>
+  </div>
+  <p>The association survives inside both groups: 96.8% / 92.1% / 50.0% of the women survived in first / second / third class, and 36.9% / 15.7% / 13.5% of the men. So the class effect is
+  not just "third class had more men". But this still doesn't prove causation, because other confounders could be behind it (cabin position, for example, is itself a consequence of the class, so it
+  would be a <i>mechanism</i> through which class acts rather than an alternative explanation). Stratifying also shows something the overall table hides: for men the big difference is between first
+  class and the rest, for women it is between third class and the rest.</p>
+
+  <h3>When can association be read as causation?</h3>
+  <ul>
+    <li>In a <b>randomized experiment</b>, where X is assigned by chance, so it can't be related to anything else. In my hacker simulation the dependence is causal by construction, because I wrote
+    the code that makes the technique change the success probability. With real hackers we would only observe who used what, and maybe skilled hackers choose phishing, so the technique would look
+    better even if it isn't.</li>
+    <li>In observational data, only with extra reasoning: controlling for confounders, a plausible mechanism, a consistent effect in different groups and studies, the right time order (the cause must come before the effect).</li>
+  </ul>
+  <p>Two more limits of the test: with a huge N even a tiny, meaningless association becomes "significant" (that's why I also report Cramér's V), and the test only looks at categories, so it
+  ignores any order in them (like First &lt; Second &lt; Third).</p>
+  <div class="note"><b>Conclusion.</b> In the Titanic data, ticket class and survival are clearly <b>not independent</b> (χ² = 102.9, df = 2, p ≈ 4.5·10⁻²³, Cramér's V = 0.34), and the association remains when
+  we look at men and women separately. This is strong evidence of an association; it's very plausible that class had a real effect (through cabin position, access to the boats, …), but the χ² test alone can't
+  prove a causal relationship.</div>
+</section>
+
+<hr>
+
+<!-- ============================================================ 8 -->
+<section id="calc">
+  <h2><span class="num">8</span>Calculator for any table</h2>
+  <p class="lead">Type the counts of any contingency table.</p>
+  <div class="card demo">
+    <span class="label">Try it</span>
+    <div class="btns">
+      <button class="ghost small" id="cc-addr">+ row</button><button class="ghost small" id="cc-delr">− row</button>
+      <button class="ghost small" id="cc-addc">+ column</button><button class="ghost small" id="cc-delc">− column</button>
+      <button class="ghost small" id="cc-ind">perfectly independent example</button><button class="ghost small" id="cc-tit">Titanic example</button>
+    </div>
+    <div class="table-wrap"><table id="cc-table" class="edit"></table></div>
+    <div class="table-wrap"><table id="cc-exp"></table></div>
+    <div class="out" id="cc-result"></div>
+  </div>
+</section>
+
+<hr>
+
+<section id="code">
+  <h2><span class="num">&lt;/&gt;</span>Code</h2>
+  <ul>
+    <li><a href="code/chi2.py"><code>code/chi2.py</code></a> - builds the contingency tables from the raw data, computes the marginal / conditional / expected frequencies, χ², the p-value (my own incomplete
+    gamma function) and Cramér's V; the hacker simulation, the type I error and power experiments; the check against scipy. Output: <a href="code/output.txt"><code>code/output.txt</code></a>.</li>
+    <li><a href="code/export_data.py"><code>code/export_data.py</code></a> - prepares the data used by the page.</li>
+    <li><a href="js/chi2.js"><code>js/chi2.js</code></a> - the same functions in JavaScript, used by all the tables on this page.</li>
+    <li><a href="data/titanic.csv"><code>data/titanic.csv</code></a> - the dataset (from the seaborn-data repository on GitHub).</li>
+  </ul>
+</section>
+
+</main>
+
+<footer>Homework 6 · Alberto Guglielmotti · Statistics</footer>
+
+<script src="js/results.js"></script>
+<script src="js/chi2.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
